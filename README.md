@@ -14,12 +14,34 @@ This Python script helps you transform exported chat histories from [Tawk.to](ht
 - Configurable system instructions for model behavior
 - Handles nested directory structures
 - Generates sequentially numbered output files
+- Creates fine-tuning ready JSONL files for OpenAI
 
 ## Prerequisites
 
 - Python 3.6+
 - Tawk.to account with chat history
+- OpenAI account with API access
 - Basic understanding of OpenAI's fine-tuning process
+
+## Important Configuration
+
+Before running the script, you must modify two key elements:
+
+1. **File Paths**: In the `main()` function, update these variables:
+```python
+input_path = "./tawkto_exports"  # Directory containing your exported chat JSON files
+output_dir = "processed_chats"   # Directory where JSONL files will be saved
+```
+
+2. **System Instructions**: In the `process_chat_messages()` function, customize this message:
+```python
+conversation = [{
+    "role": "system",
+    "content": """You are a customer service agent who will respond in the most helpful 
+    and specific way possible. If you don't know the answer, you'll acknowledge that 
+    and offer to forward the question to the team for follow-up via email or WhatsApp."""
+}]
+```
 
 ## Installation
 
@@ -46,47 +68,60 @@ cd tawkto-openai-converter
 python chat_converter.py
 ```
 
-3. **Configure the Script:**
-   - Open `chat_converter.py`
-   - Modify the input and output paths in the `main()` function
-   - Customize the system message in `process_chat_messages()` function
-
 ## Output Format
 
-The script generates JSONL files with this structure:
-```json
-{
-    "messages": [
-        {
-            "role": "system",
-            "content": "You are a customer service agent who will respond..."
-        },
-        {
-            "role": "user",
-            "content": "Customer message here"
-        },
-        {
-            "role": "assistant",
-            "content": "Agent response here"
-        }
-    ]
-}
+The script generates JSONL files where each line is a complete JSON object. Example format:
+
 ```
+{"messages": [{"role": "system", "content": "You are a customer service agent..."}, {"role": "user", "content": "Customer message here"}, {"role": "assistant", "content": "Agent response here"}]}
+{"messages": [{"role": "system", "content": "You are a customer service agent..."}, {"role": "user", "content": "Different customer message"}, {"role": "assistant", "content": "Different agent response"}]}
+```
+
+Note: Each line in the JSONL file is a complete, valid JSON object, with no commas between lines.
+
+## Using Output Files with OpenAI Fine-tuning
+
+The generated JSONL files are ready to use for OpenAI fine-tuning. To use them:
+
+1. Go to [OpenAI Platform](https://platform.openai.com/finetune) or login to your OpenAI account and navigate to the fine-tuning section in the dashboard
+2. Create a new fine-tuning job
+3. Upload your JSONL files (you can upload multiple files)
+4. Select your base model and configure training parameters
+5. Start the fine-tuning process
+
+Each JSONL file in your output directory is independently valid for fine-tuning. You can choose to:
+- Upload all files for a comprehensive training dataset
+- Select specific files based on conversation quality or topics
+- Test fine-tuning with a subset of files before using the complete dataset
 
 ## Customizing System Instructions
 
-In the `process_chat_messages()` function, modify the system message to define how your AI model should behave. Example customizations:
+The system message defines how your AI model should behave. Examples:
 
 ```python
-system_message = {
-    "role": "system",
-    "content": """You are a customer service agent who will:
-    - Always be polite and professional
-    - Follow company pricing: Basic($10), Pro($25), Enterprise($100)
-    - Never offer discounts beyond 10%
-    - Escalate technical issues to support@company.com
-    - Operating hours: Mon-Fri 9am-5pm EST"""
-}
+# Example 1: E-commerce Support
+"""You are a customer service agent for an e-commerce store who:
+- Provides shipping information for US, Canada, and EU
+- Handles returns within 30 days of purchase
+- Can process refunds for orders under $500
+- Escalates technical issues to support@company.com
+- Operating hours: Mon-Fri 9am-5pm EST"""
+
+# Example 2: Technical Support
+"""You are a technical support agent who:
+- Provides basic troubleshooting for our software
+- Can reset user passwords and help with login issues
+- Must verify user identity before providing account details
+- Escalates server issues to DevOps team
+- Never shares internal system information"""
+
+# Example 3: Booking Service
+"""You are a booking assistant who:
+- Handles reservations for our 3 locations
+- Follows pricing: Basic($50), Premium($100), VIP($200)
+- Cannot offer discounts beyond 15%
+- Must collect contact information for bookings
+- Requires 24h notice for cancellations"""
 ```
 
 ## Limitations
@@ -94,11 +129,8 @@ system_message = {
 - Tawk.to exports are limited to 50 conversations per download
 - Large chat histories require multiple export operations
 - Processing time depends on the number of chat files
+- OpenAI may have size limits for individual fine-tuning files
 
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
